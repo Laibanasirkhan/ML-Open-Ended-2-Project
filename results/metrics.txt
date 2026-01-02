@@ -1,0 +1,36 @@
+=============================
+📊 Model Evaluation Metrics
+=============================
+
+Logistic Regression:
+- Accuracy: 0.8403
+- Precision: 0.8438
+- Recall: 0.8571
+- F1 Score: 0.8504
+- ROC-AUC: 0.9041
+
+Random Forest:
+- Accuracy: 0.9286
+- Precision: 0.9291
+- Recall: 0.9365
+- F1 Score: 0.9328
+- ROC-AUC: 0.9712
+
+SVM:
+- Accuracy: 0.8824
+- Precision: 0.8657
+- Recall: 0.9206
+- F1 Score: 0.8923
+- ROC-AUC: 0.9352
+
+KNN:
+- Accuracy: 0.8361
+- Precision: 0.8271
+- Recall: 0.8730
+- F1 Score: 0.8494
+- ROC-AUC: 0.9187
+
+=============================
+Final Model Selected: Random Forest
+Reason: Highest accuracy, F1-score, and ROC-AUC among all models.
+=============================
