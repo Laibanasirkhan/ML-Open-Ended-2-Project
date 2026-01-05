@@ -5,7 +5,9 @@ import os
 import plotly.express as px
 import plotly.graph_objects as go
 import time
+import base64
 from sklearn.preprocessing import MinMaxScaler
+from fpdf import FPDF
 
 # Optional: Lottie animations
 try:
@@ -19,7 +21,7 @@ except ImportError:
 st.set_page_config(
     page_title="Heart Disease Risk Assessment",
     layout="wide",
-    page_icon="❤️",
+    page_icon="🫀",
     initial_sidebar_state="expanded"
 )
 
@@ -31,13 +33,22 @@ st.markdown("""
     color: #ffffff;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-.css-1d391kg {
-    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
-    border-right: 3px solid #ffffff;
-    border-radius: 10px;
-    padding: 20px;
+
+/* ---------- SIDEBAR (INTEGRATED LOOK) ---------- */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%) !important;
+    border-right: 3px solid rgba(255,255,255,0.4);
 }
-h1, h2, h3 { color: #ffffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); font-weight:bold; }
+section[data-testid="stSidebar"] * {
+    color: #ffffff !important;
+}
+section[data-testid="stSidebar"] select {
+    background-color: rgba(255,255,255,0.15) !important;
+    color: #ffffff !important;
+    border-radius: 10px;
+}
+
+/* ---------- BUTTONS ---------- */
 .stButton>button {
     background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
     color: white;
@@ -47,27 +58,61 @@ h1, h2, h3 { color: #ffffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); font-weig
     font-size: 18px;
     font-weight: bold;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    transition: all 0.3s ease;
 }
 .stButton>button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-    background: linear-gradient(45deg, #4ecdc4, #ff6b6b);
 }
-.stSlider, .stSelectbox { background-color: rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; border: 1px solid rgba(255,255,255,0.3); }
-hr { border: 2px solid rgba(255,255,255,0.5); border-radius: 5px; }
-.stAlert { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-.plotly-graph-div { border-radius: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.3); background-color: rgba(255,255,255,0.9); }
-.dataframe { border-radius: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.3); background-color: rgba(255,255,255,0.9); color:black; }
-.footer { position: fixed; bottom: 0; width: 100%; background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%); text-align: center; padding: 15px; font-size: 14px; color: #ffffff; border-top: 2px solid rgba(255,255,255,0.3); }
-.card { background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; margin: 10px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); }
-.metric { background: rgba(255,255,255,0.2); border-radius: 10px; padding: 15px; text-align: center; margin: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-@media (max-width: 768px) {
-    .stApp { font-size: 14px; }
-    .card { padding: 15px; }
+
+/* ---------- CARDS ---------- */
+.card {
+    background: rgba(255,255,255,0.12);
+    border-radius: 15px;
+    padding: 20px;
+    margin: 10px 0;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
 }
-.fade-in { animation: fadeIn 1s ease-in; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- METRICS ---------- */
+.metric {
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+}
+
+/* ---------- TABLE ---------- */
+.table-container {
+    background-color: rgba(0,0,0,0.85);
+    border-radius: 15px;
+    padding: 20px;
+    color: #ffff00;
+    font-weight: bold;
+}
+
+/* ---------- ALERT ---------- */
+.dark-alert {
+    background-color: #8b0000;
+    color: white;
+    padding: 15px;
+    border-radius: 15px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* ---------- HEART STICKER ---------- */
+.heart-sticker {
+    background: white;
+    border-radius: 50%;
+    padding: 18px;
+    box-shadow: 0px 10px 30px rgba(0,0,0,0.35);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: auto;
+}
+.heart-sticker img {
+    width: 260px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -76,7 +121,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "final_model.pkl")
 SCALER_PATH = os.path.join(BASE_DIR, "models", "scaler.pkl")
 DATA_PATH = os.path.join(BASE_DIR, "data", "heart_disease_cleaned.csv")
-IMAGE_PATH = os.path.join(os.path.dirname(__file__), "assets", "heart.png")
+IMAGE_PATH = os.path.join(os.path.dirname(__file__), "assets", "real_human_heart.png")
 
 # ------------------ LOAD DATA & MODEL ------------------
 @st.cache_data
@@ -90,43 +135,45 @@ def load_model():
 df = load_data()
 model, scaler = load_model()
 
-# ------------------ UTILITY FUNCTIONS ------------------
-def load_lottieurl(url: str):
-    if not LOTTIE_AVAILABLE:
-        return None
-    r = requests.get(url)
-    if r.status_code != 200:
-        return None
-    return r.json()
-
+# ------------------ UTILITIES ------------------
 def section_header(title, subtitle=""):
-    st.markdown(f"<div class='card fade-in'><h2>{title}</h2>", unsafe_allow_html=True)
-    if subtitle:
-        st.markdown(f"<p style='color: #ffffff; font-size: 18px;'>{subtitle}</p>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='card'><h2>{title}</h2><p>{subtitle}</p></div>", unsafe_allow_html=True)
+
+def generate_pdf(patient_data, prediction, probability):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt="Heart Disease Risk Assessment Report", ln=True, align='C')
+    pdf.ln(10)
+    pdf.cell(200, 10, txt=f"Prediction: {'High Risk' if prediction == 1 else 'Low Risk'}", ln=True)
+    pdf.cell(200, 10, txt=f"Probability: {probability:.2f}%", ln=True)
+    pdf.ln(10)
+    pdf.cell(200, 10, txt="Patient Data:", ln=True)
+    for col in patient_data.columns:
+        pdf.cell(200, 10, txt=f"{col}: {patient_data[col].iloc[0]}", ln=True)
+    return pdf.output(dest='S').encode('latin-1')
 
 # ------------------ SIDEBAR ------------------
-st.sidebar.markdown("<h3 style='color: #ffffff;'>🩺 Navigation</h3>", unsafe_allow_html=True)
+st.sidebar.markdown("## 🩺 Navigation")
 page = st.sidebar.selectbox(
     "Select Page",
-    ["Home 🏠", "Prediction 🩺", "Data Analysis 📊", "About ℹ"],
-    key="nav"
+    ["Home", "Prediction", "Data Analysis", "About ℹ"]
 )
 
 # ==================================================
 # HOME PAGE
 # ==================================================
-if page == "Home 🏠":
+if page == "Home":
     col1, col2 = st.columns([1.6, 1])
     with col1:
         st.markdown("""
         <div class='card'>
-        <h1>❤️ Heart Disease Risk Assessment</h1>
+        <h1>🫀 Heart Disease Risk Assessment</h1>
         <h3>Predict. Analyze. Understand.</h3>
         <p>Heart disease is a <strong>global health challenge</strong> that often develops silently. Identifying risk factors early can help prevent severe outcomes and support better clinical decision-making.</p>
         <p>This application applies <strong>machine learning on real clinical data</strong> to estimate an individual’s <strong>risk of heart disease</strong> using key health indicators.</p>
         <hr>
-        <h4>🔍 What You Can Do Here</h4>
+        <h4> What You Can Do Here</h4>
         <ul>
             <li><strong>Predict</strong> heart disease risk in real time</li>
             <li><strong>Analyze</strong> patient health patterns visually</li>
@@ -136,8 +183,6 @@ if page == "Home 🏠":
         <p>Built as a <strong>high-quality data science portfolio project</strong>, demonstrating practical ML deployment and healthcare analytics.</p>
         </div>
         """, unsafe_allow_html=True)
-
-        st.markdown("<div class='card'><h3>📊 Quick Dataset Stats</h3></div>", unsafe_allow_html=True)
         col1_stat, col2_stat, col3_stat, col4_stat = st.columns(4)
         with col1_stat:
             st.markdown(f"<div class='metric'><h4>{len(df)}</h4><p>Total Patients</p></div>", unsafe_allow_html=True)
@@ -156,11 +201,10 @@ if page == "Home 🏠":
                 🩺 <strong>"Take care of your heart, and it will take care of you."</strong>
             </div>
         """, unsafe_allow_html=True)
-
 # ==================================================
 # PREDICTION PAGE
 # ==================================================
-elif page == "Prediction 🩺":
+elif page == "Prediction":
     section_header("Heart Disease Prediction", "Enter patient details below to assess risk.")
     with st.form("prediction_form"):
         col1, col2 = st.columns(2)
@@ -184,7 +228,7 @@ elif page == "Prediction 🩺":
             oldpeak = st.slider("ST Depression (Oldpeak)", 0.0, 6.0, 1.0, step=0.1)
             st_slope = st.selectbox("ST Slope", sorted(df.st_slope.unique()))
 
-        submitted = st.form_submit_button("🚀 Predict Risk")
+        submitted = st.form_submit_button("Predict Risk")
 
     if submitted:
         input_data = pd.DataFrame([[age, sex, chest_pain_type, resting_bp_s, cholesterol,
@@ -219,25 +263,34 @@ elif page == "Prediction 🩺":
         st.plotly_chart(fig_gauge, use_container_width=True)
 
         if prediction==1:
-            st.error(f"⚠ **High Risk of Heart Disease** ({probability:.2f}%)")
+            st.markdown(f"<div class='dark-alert'>⚠ High Risk of Heart Disease ({probability:.2f}%)</div>", unsafe_allow_html=True)
             st.markdown("<div class='card'><p><strong>Recommendation:</strong> Consult a healthcare professional immediately.</p></div>", unsafe_allow_html=True)
         else:
-            st.success(f"✅ **Low Risk of Heart Disease** ({probability:.2f}%)")
+            st.success(f"✅ Low Risk of Heart Disease ({probability:.2f}%)")
             st.markdown("<div class='card'><p><strong>Note:</strong> Maintain a healthy lifestyle.</p></div>", unsafe_allow_html=True)
+
+        # PDF Download
+        pdf_data = generate_pdf(input_data, prediction, probability)
+        st.download_button(
+            label="Download Report as PDF",
+            data=pdf_data,
+            file_name="heart_disease_report.pdf",
+            mime="application/pdf"
+        )
 
 # ==================================================
 # DATA ANALYSIS PAGE
 # ==================================================
-elif page == "Data Analysis 📊":
+elif page == "Data Analysis":
     section_header("Patient Profile Analysis", "Compare your inputs with dataset averages.")
     if "patient_data" not in st.session_state:
-        st.info("💡 Please make a prediction first to view analysis.")
+        st.info("Please make a prediction first to view analysis.")
         st.stop()
 
     patient = st.session_state["patient_data"]
     dataset_avg = df[patient.columns].mean()
 
-    # Radar Chart
+    # Enhanced Radar Chart with bright colors and no white background
     scaler_radar = MinMaxScaler()
     radar_data = pd.DataFrame({
         "Feature": patient.columns,
@@ -250,20 +303,20 @@ elif page == "Data Analysis 📊":
         theta="Feature",
         color="variable",
         line_close=True,
-        title="Normalized Patient Profile vs Dataset Average",
-        color_discrete_map={"Patient":"#ff3b3b","Dataset Average":"#00ffcc"}
+        title="<b>Normalized Patient Profile vs Dataset Average</b>",
+        color_discrete_map={"Patient":"#ff0000","Dataset Average":"#00ff00"}
     )
     fig.update_traces(fill='toself', line=dict(width=4))
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color='white')
     st.plotly_chart(fig, use_container_width=True)
 
-    # Bar Chart
+    # Enhanced Bar Chart with bright colors and visible text (white on dark)
     bar_fig = go.Figure()
-    bar_fig.add_trace(go.Bar(x=patient.columns, y=patient.iloc[0].values, name='Patient', marker_color='#ff6b6b',
-                             text=[f"{v:.1f}" if isinstance(v,(int,float)) else str(v) for v in patient.iloc[0].values], textposition='auto'))
-    bar_fig.add_trace(go.Bar(x=patient.columns, y=dataset_avg.values, name='Dataset Avg', marker_color='#4ecdc4',
-                             text=[f"{v:.1f}" for v in dataset_avg.values], textposition='auto'))
-    bar_fig.update_layout(title="Feature Comparison: Patient vs Dataset Average",
+    bar_fig.add_trace(go.Bar(x=patient.columns, y=patient.iloc[0].values, name='Patient', marker_color='#ff0000',
+                             text=[f"{v:.1f}" if isinstance(v,(int,float)) else str(v) for v in patient.iloc[0].values], textposition='auto', textfont=dict(color='white')))
+    bar_fig.add_trace(go.Bar(x=patient.columns, y=dataset_avg.values, name='Dataset Avg', marker_color='#00ff00',
+                             text=[f"{v:.1f}" for v in dataset_avg.values], textposition='auto', textfont=dict(color='white')))
+    bar_fig.update_layout(title="<b>Feature Comparison: Patient vs Dataset Average</b>",
                           xaxis_title="Clinical Features",
                           yaxis_title="Value",
                           barmode="group",
@@ -273,18 +326,19 @@ elif page == "Data Analysis 📊":
                           legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
     st.plotly_chart(bar_fig, use_container_width=True)
 
-    # Pie Chart
+    # Enhanced Pie Chart with bright colors
     risk_counts = df['target'].value_counts()
     pie_fig = px.pie(
         values=risk_counts.values,
         names=['Low Risk','High Risk'],
-        title="Dataset Risk Distribution",
-        color_discrete_sequence=['#4ecdc4','#ff6b6b']
+        title="<b>Dataset Risk Distribution</b>",
+        color_discrete_sequence=['#00ff00','#ff0000']
     )
     pie_fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color='white')
     st.plotly_chart(pie_fig, use_container_width=True)
 
-    # Patient Summary Table
+    # Enhanced Patient Summary Table with better styling
+        # Enhanced Patient Summary Table with better styling
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("<h3>📋 Patient Input Summary</h3>", unsafe_allow_html=True)
 
@@ -292,26 +346,97 @@ elif page == "Data Analysis 📊":
 
     # Format numeric and categorical values
     def format_value(x):
-        try:
+        if isinstance(x, float):
             return f"{x:.1f}"
-        except:
+        elif isinstance(x, int):
+            return str(x)
+        else:
             return str(x)
     patient_summary["Patient Value"] = patient_summary["Patient Value"].apply(format_value)
 
-    # Display table with clean white background & black text
-    st.table(
-        patient_summary.style.set_table_styles([
-            {'selector':'thead', 'props':[('background-color','#4ecdc4'),
-                                          ('color','white'),
-                                          ('font-weight','bold'),
-                                          ('text-align','center')]},
-            {'selector':'tbody', 'props':[('background-color','white'),
-                                          ('color','black'),
-                                          ('text-align','center'),
-                                          ('font-size','16px')]}
-        ])
-    )
+    # Display table with enhanced styling for visibility
+    st.markdown("<div class='table-container'>", unsafe_allow_html=True)
+    st.table(patient_summary)
+    st.markdown("</div>", unsafe_allow_html=True)
+# ==================================================
+# DATA ANALYSIS PAGE
+# ==================================================
+elif page == "Data Analysis":
+    section_header("Patient Profile Analysis", "Compare your inputs with dataset averages.")
+    if "patient_data" not in st.session_state:
+        st.info("Please make a prediction first to view analysis.")
+        st.stop()
 
+    patient = st.session_state["patient_data"]
+    dataset_avg = df[patient.columns].mean()
+
+    # Enhanced Radar Chart with bright colors and no white background
+    scaler_radar = MinMaxScaler()
+    radar_data = pd.DataFrame({
+        "Feature": patient.columns,
+        "Patient": scaler_radar.fit_transform(patient.T).flatten(),
+        "Dataset Average": scaler_radar.fit_transform(dataset_avg.values.reshape(-1,1)).flatten()
+    })
+    fig = px.line_polar(
+        radar_data.melt(id_vars="Feature"),
+        r="value",
+        theta="Feature",
+        color="variable",
+        line_close=True,
+        title="<b>Normalized Patient Profile vs Dataset Average</b>",
+        color_discrete_map={"Patient":"#ff0000","Dataset Average":"#00ff00"}
+    )
+    fig.update_traces(fill='toself', line=dict(width=4))
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color='white')
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Enhanced Bar Chart with bright colors and visible text (white on dark)
+    bar_fig = go.Figure()
+    bar_fig.add_trace(go.Bar(x=patient.columns, y=patient.iloc[0].values, name='Patient', marker_color='#ff0000',
+                             text=[f"{v:.1f}" if isinstance(v,(int,float)) else str(v) for v in patient.iloc[0].values], textposition='auto', textfont=dict(color='white')))
+    bar_fig.add_trace(go.Bar(x=patient.columns, y=dataset_avg.values, name='Dataset Avg', marker_color='#00ff00',
+                             text=[f"{v:.1f}" for v in dataset_avg.values], textposition='auto', textfont=dict(color='white')))
+    bar_fig.update_layout(title="<b>Feature Comparison: Patient vs Dataset Average</b>",
+                          xaxis_title="Clinical Features",
+                          yaxis_title="Value",
+                          barmode="group",
+                          paper_bgcolor="rgba(0,0,0,0)",
+                          plot_bgcolor="rgba(0,0,0,0)",
+                          font_color="white",
+                          legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+    st.plotly_chart(bar_fig, use_container_width=True)
+
+    # Enhanced Pie Chart with bright colors
+    risk_counts = df['target'].value_counts()
+    pie_fig = px.pie(
+        values=risk_counts.values,
+        names=['Low Risk','High Risk'],
+        title="<b>Dataset Risk Distribution</b>",
+        color_discrete_sequence=['#00ff00','#ff0000']
+    )
+    pie_fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color='white')
+    st.plotly_chart(pie_fig, use_container_width=True)
+
+    # Enhanced Patient Summary Table with better styling
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("<h3>📋 Patient Input Summary</h3>", unsafe_allow_html=True)
+
+    patient_summary = patient.T.rename(columns={0: "Patient Value"})
+
+    # Format numeric and categorical values
+    def format_value(x):
+        if isinstance(x, float):
+            return f"{x:.1f}"
+        elif isinstance(x, int):
+            return str(x)
+        else:
+            return str(x)
+    patient_summary["Patient Value"] = patient_summary["Patient Value"].apply(format_value)
+
+    # Display table with enhanced styling for visibility
+    st.markdown("<div class='table-container'>", unsafe_allow_html=True)
+    st.table(patient_summary)
+    st.markdown("</div>", unsafe_allow_html=True)
 # ==================================================
 # ABOUT PAGE
 # ==================================================
