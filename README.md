@@ -1,4 +1,4 @@
-# ❤️ Heart Disease Prediction System
+# Heart Disease Prediction System
 An **end-to-end Machine Learning project** focused on **data analysis, model building, evaluation, and deployment** to predict the risk of heart disease using clinical parameters.
 This project demonstrates the **complete ML pipeline**, from raw data to a deployed web application.
 
@@ -7,7 +7,7 @@ This project demonstrates the **complete ML pipeline**, from raw data to a deplo
 To build a **machine learning–based system** that can **predict heart disease risk early** using patient health data, helping in timely medical decision-making.
 
 ---
-## 🎯 Project Objectives
+## Project Objectives
 
 * Perform detailed **Exploratory Data Analysis (EDA)**
 * Preprocess and prepare medical data
@@ -124,15 +124,13 @@ Heart_disease_project/
 │
 ├── ui/
 │   ├── app.py
-│   └── assets/
-│       └── heart.png
-│
+│  
 ├── requirements.txt
 └── README.md
 ```
 
 ---
-## ⚙️ Technologies Used
+## Technologies Used
 
 * Python
 * Pandas, NumPy
@@ -160,7 +158,7 @@ streamlit run ui/app.py
 
 This project is intended **only for educational and research purposes**.
 ---
-## 🚀 Future Improvements
+## Future Improvements
 
 * Larger and more diverse datasets
 * Explainable AI (SHAP, LIME)
@@ -168,7 +166,7 @@ This project is intended **only for educational and research purposes**.
 * Clinical validation
 
 ---
-## ⭐ Conclusion
+## Conclusion
 
 This project showcases:
 
@@ -177,5 +175,3 @@ This project showcases:
 * Proper **model evaluation for medical data**
 * **Real-world deployment experience**
 ---
-
-Just say the word — you’ve DONE the hard part 👑
