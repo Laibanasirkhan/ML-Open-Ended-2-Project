@@ -106,29 +106,60 @@ Evaluated models using:
 ## 📁 Project Folder Structure
 
 ```bash
-Heart_disease_project/
+Heart_Disease_Project/
+│
+├── Reports_pdf/
+│   ├── 1_Data_preprocessing_EDA_report.pdf
+│   ├── 2_Feature_Selection.pdf
+│   ├── 3_Model_training_evaluation_Report.pdf
+│   ├── 4_Hyper_tuning_Report.pdf
+│   ├── SHAP_Explanation.pdf
+│   └── Final_Report.pdf
 │
 ├── data/
-│   ├── heart_disease.csv
-│   └── heart_disease_cleaned.csv
+│   ├── heart-disease-dataset.csv
+│   ├── heart_disease_cleaned.csv
+│   └── selected_features.csv
 │
-├── notebooks/
-│   ├── 01_eda.ipynb
-│   ├── 02_preprocessing.ipynb
-│   ├── 03_model_training.ipynb
-│   └── 04_model_evaluation.ipynb
-        05_hyperparameter tuning.ipynb
-        06_shap.ipynb
+├── images/
+│   ├── Home.png
+│   ├── Screenshot_2026-01-04_225303.png
+│   ├── Screenshot_2026-01-04_225315.png
+│   ├── Screenshot_2026-01-04_225332.png
+│   ├── Screenshot_2026-01-04_225348.png
+│   ├── Screenshot_2026-01-04_225403.png
+│   ├── shap_global_bar.png
+│   ├── shap_global_dot.png
+│   ├── shap_waterfall_sample0.png
+│   └── shap_waterfall_sample1.png
 │
 ├── models/
 │   ├── final_model.pkl
-│   └── scaler.pkl
+│   ├── random_forest_model.pkl
+│   ├── logistic_regression_model.pkl
+│   ├── svm_model.pkl
+│   ├── knn_model.pkl
+│   ├── scaler.pkl
+│   └── preprocessor_pipeline.pkl
+│
+├── notebooks/
+│   ├── 1_data_preprocessing.ipynb
+│   ├── 2_EDA.ipynb
+│   ├── 3_Feature_Selection.ipynb
+│   ├── 4_Model_training_evaluation.ipynb
+│   ├── 5_hyperparameter_tuning.ipynb
+│   └── Shap_notebook.ipynb
+│
+├── results/
+│   └── metrics.txt
 │
 ├── ui/
-│   ├── app.py
-│  
-├── requirements.txt
-└── README.md
+│   └── app.py
+│
+├── Project_Demo_Video.mp4
+├── README.md
+└── requirements.txt
+
 ```
 
 ---
