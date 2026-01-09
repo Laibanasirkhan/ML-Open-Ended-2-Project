@@ -117,6 +117,8 @@ Heart_disease_project/
 │   ├── 02_preprocessing.ipynb
 │   ├── 03_model_training.ipynb
 │   └── 04_model_evaluation.ipynb
+        05_hyperparameter tuning.ipynb
+        06_shap.ipynb
 │
 ├── models/
 │   ├── final_model.pkl
